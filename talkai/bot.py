@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
+from datetime import datetime
 import discord
-from pydub import AudioSegment
 
 from config import DISCORD_BOT_TOKEN
 
@@ -101,9 +101,10 @@ async def record_stop(ctx):
 
 
 async def finished_callback(sink, ctx):
+    t = datetime.now().strftime('%Y%m%d%H%M%S')
     for user_id, audio in sink.audio_data.items():
-        with open(Path('voice.mp3'), "wb") as f:
+        with open(Path(f'voice_{t}.mp3'), "wb") as f:
             f.write(audio.file.getbuffer())
 
 
-bot.run(BOT_TOKEN)
+bot.run(DISCORD_BOT_TOKEN)
