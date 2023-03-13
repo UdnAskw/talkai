@@ -77,11 +77,11 @@ async def character(
         description='音声スタイルを指定'
     )
 ):
-    if f'{character} {style}' in vv.all_speakers:
-        vv.speaker_name = character
+    if f'{name} {style}' in vv.all_speakers:
+        vv.speaker_name = name
         vv.speaker_style = style
         embed = discord.Embed(
-            description=f'ボイスを"{character} {style}"に変更しました',
+            description=f'ボイスを"{name} {style}"に変更しました',
             color=discord.Colour.green()
         )
         await ctx.respond(embed=embed)
