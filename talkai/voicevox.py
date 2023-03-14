@@ -72,7 +72,7 @@ class Voicevox:
 def main():
     vv = Voicevox()
     audio = vv.speak('これはテスト音声です。')
-    with open(Path(f'voice.mp3'), "wb") as f:
+    with open(Path(f'test.mp3'), "wb") as f:
        f.write(audio)
 
 

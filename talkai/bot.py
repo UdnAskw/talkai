@@ -1,6 +1,8 @@
+from os import remove
 from io import BytesIO
 from pathlib import Path
 from datetime import datetime
+from threading import Thread
 import discord
 from discord import Option
 import whisper
@@ -17,6 +19,7 @@ messages = [
     {'role': 'system', 'content': '口語で話して'},
 ]
 vv = voicevox.Voicevox()
+tmp_audio = Path('tmp_voice.mp3')
 
 
 @bot.slash_command(description='ボイスチャンネルに参加')
@@ -128,7 +131,19 @@ async def voice_list(ctx):
         description='\n'.join(vv.all_speakers),
         color=discord.Colour.green()
     )
-    await ctx.respond(embed=embed) 
+    await ctx.respond(embed=embed)
+
+
+@bot.slash_command()
+async def test(ctx):
+    ctx.guild.voice_client.play(
+        discord.FFmpegPCMAudio('test.mp3')
+    )
+    embed = discord.Embed(
+        description='テスト音声を再生します',
+        color=discord.Colour.green()
+    )
+    await ctx.respond(embed=embed)
 
 
 @bot.event
@@ -144,7 +159,7 @@ async def on_voice_state_update(member, before, after):
         now = datetime.now().strftime('%Y%m%d%H%M%S')
         audio_file = Path(f'voice_{member.id}_{now}.mp3').resolve()
         vc.start_recording(
-            discord.sinks.WaveSink(),
+            discord.sinks.MP3Sink(),
             finished_callback,
             vc,
         )
@@ -162,27 +177,32 @@ async def on_voice_state_update(member, before, after):
 async def finished_callback(sink, voice_client):
     global messages
     start = datetime.now()
+    print(f'START: {start}')
+
     for user_id, audio in sink.audio_data.items():
         audio_data = BytesIO(audio.file.getbuffer())
-        audio_data.name = 'voice.wav'
-        print(f'GET_WAV: {start - datetime.now()}')
+        audio_data.name = 'voice.mp3'
+        print(f'GET_MP3: {start - datetime.now()}')
         
-
         text = whisper.transcrible(audio_data)
+        print(f'Q: {text}')
         print(f'GET_TXT: {start - datetime.now()}')
 
         messages += [{'role': 'user', 'content': text}]
         res = chatgpt.chat(messages)
-        print(res)
+        print(f'A: {res}')
         messages += [{'role': 'assistant', 'content': res}]
         print(f'GET_GPT: {start - datetime.now()}')
 
         vb_audio = vv.speak(res)
         print(f'GET_VOX: {start - datetime.now()}')
-        a = BytesIO(vb_audio)
+        with open(tmp_audio, "wb") as f:
+            f.write(vb_audio)
+        import time
+        time.sleep(0.5)
         voice_client.play(
-            discord.FFmpegPCMAudio(a, pipe=True)
+            discord.FFmpegPCMAudio(tmp_audio)
         )
 
-
+        
 bot.run(DISCORD_BOT_TOKEN)
